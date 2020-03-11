@@ -5,7 +5,11 @@ DeepRacer Simulator
 ## init
 
 ```bash
+# on Mac or Ubuntu
 pip3 install pygame==2.0.0.dev4
+
+# on Windows
+py -m pip install -U pygame --user
 ```
 
 ## run
