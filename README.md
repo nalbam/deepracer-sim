@@ -1,1 +1,42 @@
 # deepracer-sim
+
+DeepRacer Simulator
+
+## init
+
+```bash
+pip3 install pygame==2.0.0.dev4
+```
+
+## run
+
+```bash
+python3 sim.py
+
+python3 sim.py -adf -s 1.5 --bots-count 6 --bots-speed 0
+```
+
+## help
+
+```
+python3 sim.py -h
+
+pygame 2.0.0.dev4 (SDL 2.0.10, python 3.7.6)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+usage: sim.py [-h] [-a] [-d] [-f] [-s SPEED] [--bots-count BOTS_COUNT]
+              [--bots-speed BOTS_SPEED]
+
+DeepRacer Simulator
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a, --autonomous      autonomous
+  -d, --draw-lines      draw lines
+  -f, --full-screen     full screen
+  -s SPEED, --speed SPEED
+                        speed
+  --bots-count BOTS_COUNT
+                        bots count
+  --bots-speed BOTS_SPEED
+                        bots speed
+```
