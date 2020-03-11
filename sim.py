@@ -6,13 +6,14 @@ import datetime
 import json
 import math
 import pygame
+import random
 import time
 
 from pygame.math import Vector2
 
 from tracks import sola as track
 
-from functions import example1 as deepracer
+from functions import example3 as deepracer
 
 
 TITLE = "DeepRacer Simulator"
@@ -23,7 +24,7 @@ SCREEN_RATE = 70
 
 TAIL_LENGTH = 200
 
-MIN_REWARD = 0.001
+MIN_REWARD = 0.0001
 
 STEERING_ANGLE = [-30, -20, -10, 0, 10, 20, 30]
 SPEED = 1.4
@@ -519,6 +520,8 @@ def run():
         }
 
         # pick target
+        rewards = []
+
         pick = -1
         max_reward = MIN_REWARD
 
@@ -530,12 +533,28 @@ def run():
 
             reward = deepracer.reward_function(params)
 
-            if reward > max_reward:
-                pick = i
-                max_reward = reward
-                target_angle = steering_angle
+            print("reward", i, round(reward, 5))
 
-        print("reward", pick, round(max_reward, 5), target_angle, warned)
+            if reward > max_reward:
+                rewards.clear()
+                rewards.append(i)
+                max_reward = reward
+            elif reward == max_reward:
+                rewards.append(i)
+
+        n = len(rewards)
+
+        if n == 0:
+            target_angle = 0
+        elif n == 1:
+            pick = rewards[0]
+            target_angle = STEERING_ANGLE[pick]
+        else:
+            i = random.randint(0, n - 1)
+            pick = rewards[i]
+            target_angle = STEERING_ANGLE[pick]
+
+        print("pick", pick, round(max_reward, 5), target_angle, warned)
 
         # moving
         pos = car.move(surface, target_angle, offtrack, crashed, warned)
