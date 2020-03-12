@@ -693,4 +693,5 @@ def get_merge_waypoints(waypoints1, waypoints2):
     return results
 
 
-run()
+if __name__ == "__main__":
+    run()
