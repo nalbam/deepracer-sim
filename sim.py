@@ -444,6 +444,14 @@ def run():
 
         closest_waypoints = [min_idx, closest2]
 
+        dist_inside = get_distance(pos, inside_lines[min_idx])
+        dist_outside = get_distance(pos, outside_lines[min_idx])
+
+        if dist_inside < dist_outside:
+            is_left_of_center = True
+        else:
+            is_left_of_center = False
+
         if min_dist > (track_width * 0.5):
             offtrack = True
         else:
@@ -504,6 +512,7 @@ def run():
             "g_scr_rate": g_scr_rate,
             "g_scr_width": g_scr_width,
             "heading": heading,
+            "is_left_of_center": is_left_of_center,
             "is_reversed": False,
             "objects_distance": objects_distance,
             "objects_left_of_center": objects_left_of_center,
