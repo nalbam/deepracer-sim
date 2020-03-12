@@ -18,6 +18,8 @@ from functions import example3 as deepracer
 
 TITLE = "DeepRacer Simulator"
 
+DEBUG_LOG = False
+
 FRAME_RATE = 15
 
 SCREEN_RATE = 70
@@ -542,7 +544,8 @@ def run():
 
             reward = deepracer.reward_function(params)
 
-            print("reward", i, round(reward, 5))
+            if DEBUG_LOG:
+                print("reward", i, round(reward, 5))
 
             if reward > max_reward:
                 rewards.clear()
