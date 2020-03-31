@@ -14,7 +14,7 @@ from pygame.math import Vector2
 
 from tracks import sola as track
 
-from functions import example3 as deepracer
+from functions import fw as deepracer
 
 
 TITLE = "DeepRacer Simulator"
@@ -650,20 +650,36 @@ def get_adjust():
 
 
 def get_waypoints(key):
+    waypoints = None
     if key == "center":
-        return get_correction_waypoints(track.get_center_waypoints())
+        waypoints = track.get_center_waypoints()
     elif key == "inside":
-        return get_correction_waypoints(track.get_inside_waypoints())
+        waypoints = track.get_inside_waypoints()
     elif key == "outside":
-        return get_correction_waypoints(track.get_outside_waypoints())
+        waypoints = track.get_outside_waypoints()
     elif key == "left":
-        return get_merge_waypoints(
+        waypoints = get_merge_waypoints(
             track.get_inside_waypoints(), track.get_center_waypoints()
         )
+    elif key == "left2":
+        waypoints = get_merge_waypoints(
+            track.get_inside_waypoints(),
+            get_merge_waypoints(
+                track.get_inside_waypoints(), track.get_center_waypoints()
+            ),
+        )
     elif key == "right":
-        return get_merge_waypoints(
+        waypoints = get_merge_waypoints(
             track.get_center_waypoints(), track.get_outside_waypoints()
         )
+    elif key == "right2":
+        waypoints = get_merge_waypoints(
+            get_merge_waypoints(
+                track.get_center_waypoints(), track.get_outside_waypoints()
+            ),
+            track.get_outside_waypoints(),
+        )
+    return get_correction_waypoints(waypoints)
 
 
 def get_correction_point(point):
@@ -690,7 +706,7 @@ def get_merge_waypoints(waypoints1, waypoints2):
     for i in range(0, length):
         x = (waypoints1[i][0] + waypoints2[i][0]) * 0.5
         y = (waypoints1[i][1] + waypoints2[i][1]) * 0.5
-        results.append(get_correction_point([x, y]))
+        results.append([x, y])
     return results
 
 
