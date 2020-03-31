@@ -17,7 +17,7 @@ py -m pip install -U pygame --user
 ```bash
 python3 sim.py
 
-python3 sim.py -adf -s 1.5 --bots-count 6 --bots-speed 0
+python3 sim.py -a -s 1.5 --bots-count 6 --bots-speed 0
 ```
 
 [![DeepRacer Simulator](http://img.youtube.com/vi/9jSZm7FcqmE/0.jpg)](https://youtu.be/9jSZm7FcqmE?t=0s)
