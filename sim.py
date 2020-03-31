@@ -110,10 +110,8 @@ def get_angle_degrees(coor1, coor2):
 
 def get_diff_angle(angle1, angle2):
     diff = (angle1 - angle2) % (2.0 * math.pi)
-
     if diff >= math.pi:
         diff -= 2.0 * math.pi
-
     return diff
 
 
@@ -143,9 +141,15 @@ def get_closeset(waypoints, pos):
 
 def draw_line(surface, color, start_pos, end_pos, width):
     try:
-        pygame.draw.line(surface, color, start_pos, end_pos, width)
+        pygame.draw.line(
+            surface,
+            color,
+            get_adjust_point(start_pos),
+            get_adjust_point(end_pos),
+            width,
+        )
     except Exception as ex:
-        print("Error:", ex, start_pos, end_pos)
+        print("Error:", ex, start_pos, end_pos, width)
 
 
 def draw_lines(surface, color, closed, lines, width, dashed):
@@ -153,16 +157,25 @@ def draw_lines(surface, color, closed, lines, width, dashed):
         lgngth = len(lines)
         for i in range(0, lgngth - 1):
             if i % 2 == 0:
-                draw_line(surface, color, lines[i - 1], lines[i], width)
+                draw_line(
+                    surface, color, lines[i - 1], lines[i], width,
+                )
     else:
-        pygame.draw.lines(surface, color, closed, lines, width)
+        pygame.draw.lines(surface, color, closed, get_adjust_points(lines), width)
+
+
+def draw_polygon(surface, color, lines):
+    try:
+        pygame.draw.polygon(surface, color, get_adjust_points(lines))
+    except Exception as ex:
+        print("Error:", ex, color)
 
 
 def draw_circle(surface, color, center, radius, width):
     try:
-        pygame.draw.circle(surface, color, center, radius, width)
+        pygame.draw.circle(surface, color, get_adjust_point(center), radius, width)
     except Exception as ex:
-        print("Error:", ex, center, radius)
+        print("Error:", ex, center, radius, width)
 
 
 def init_bot(args):
@@ -235,7 +248,7 @@ class Bot:
 
 class Car:
     def __init__(self, args, pos, angle, speed, is_bot):
-        global g_scr_rate
+        # global g_scr_rate
 
         self.args = args
 
@@ -250,7 +263,7 @@ class Car:
 
         self.image = self.images["origin"]
 
-        self.vel = Vector2((speed * g_scr_rate / FRAME_RATE), 0)
+        self.vel = Vector2((speed / FRAME_RATE), 0)
 
         self.pos = Vector2(pos)
         self.rect = self.image.get_rect(center=pos)
@@ -267,8 +280,8 @@ class Car:
         return self.angle * -1
 
     def move(self, surface, angle, offtrack=False, crashed=False, warned=False):
-        global g_scr_width
-        global g_scr_height
+        # global g_scr_width
+        # global g_scr_height
 
         angle *= -1
 
@@ -288,28 +301,28 @@ class Car:
         elif self.args.autonomous:
             self.pos += self.vel
 
-        self.pos[0] = min(max(self.pos[0], 0), g_scr_width)
-        self.pos[1] = min(max(self.pos[1], 0), g_scr_height)
+        # self.pos[0] = min(max(self.pos[0], 0), g_scr_width)
+        # self.pos[1] = min(max(self.pos[1], 0), g_scr_height)
 
-        self.rect.center = self.pos
+        self.rect.center = get_adjust_point(self.pos)
 
         # angle
         if self.is_bot:
             if abs(angle) > 0:
                 self.angle += angle
-                self.vel.rotate_ip(angle * -1)
+                self.vel.rotate_ip(-angle)
         elif keys[pygame.K_LEFT]:
             self.angle += 10
-            self.vel.rotate_ip(-10)
+            self.vel.rotate_ip(10)
             self.key_pressed = True
         elif keys[pygame.K_RIGHT]:
             self.angle -= 10
-            self.vel.rotate_ip(10)
+            self.vel.rotate_ip(-10)
             self.key_pressed = True
         elif self.args.autonomous:
             if abs(angle) > 0:
                 self.angle += angle
-                self.vel.rotate_ip(angle * -1)
+                self.vel.rotate_ip(-angle)
 
         if self.angle > 180:
             self.angle = self.angle - 360
@@ -330,7 +343,7 @@ class Car:
         else:
             image = self.images["origin"]
 
-        self.image = pygame.transform.rotate(image, self.angle)
+        self.image = pygame.transform.rotate(image, -self.angle)
 
         self.rect = self.image.get_rect(center=self.rect.center)
         mask_car = pygame.mask.from_surface(self.image)
@@ -430,8 +443,8 @@ def run():
         surface.fill(COLOR_FLOOR)
 
         # draw track
-        pygame.draw.polygon(surface, COLOR_ROAD, outside_lines)
-        pygame.draw.polygon(surface, COLOR_FLOOR, inside_lines)
+        draw_polygon(surface, COLOR_ROAD, outside_lines)
+        draw_polygon(surface, COLOR_FLOOR, inside_lines)
 
         # draw lines
         draw_lines(surface, COLOR_TRACK, False, inside_lines, 5, False)
@@ -679,10 +692,11 @@ def get_waypoints(key):
             ),
             track.get_outside_waypoints(),
         )
-    return get_correction_waypoints(waypoints)
+    # return get_adjust_points(waypoints)
+    return waypoints
 
 
-def get_correction_point(point):
+def get_adjust_point(point):
     adjust, rate, width, height = get_adjust()
 
     if rate == 1:
@@ -693,19 +707,19 @@ def get_correction_point(point):
     return [x, y]
 
 
-def get_correction_waypoints(waypoints):
+def get_adjust_points(points):
     results = []
-    for point in waypoints:
-        results.append(get_correction_point(point))
+    for point in points:
+        results.append(get_adjust_point(point))
     return results
 
 
-def get_merge_waypoints(waypoints1, waypoints2):
-    length = min(len(waypoints1), len(waypoints2))
+def get_merge_waypoints(points1, points2):
+    length = min(len(points1), len(points2))
     results = []
     for i in range(0, length):
-        x = (waypoints1[i][0] + waypoints2[i][0]) * 0.5
-        y = (waypoints1[i][1] + waypoints2[i][1]) * 0.5
+        x = (points1[i][0] + points2[i][0]) * 0.5
+        y = (points1[i][1] + points2[i][1]) * 0.5
         results.append([x, y])
     return results
 
