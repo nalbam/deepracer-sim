@@ -113,12 +113,11 @@ def get_target_steering_degree(params):
 
     steering_angle = target_angle - heading
 
-    return angle_mod_360(steering_angle), [tx, ty]
+    return angle_mod_360(steering_angle)
 
 
 def score_steer_to_point_ahead(params):
-    best_stearing_angle, target = get_target_steering_degree(params)
-
+    best_stearing_angle = get_target_steering_degree(params)
     steering_angle = params["steering_angle"]
 
     error = (
@@ -127,19 +126,13 @@ def score_steer_to_point_ahead(params):
 
     score = 1.0 - abs(error)
 
-    return (
-        max(score, 0.01),
-        target,
+    return max(
+        score, 0.01
     )  # optimizer is rumored to struggle with negative numbers and numbers too close to zero
 
 
-def reward_function(params, is_sim=False):
-    reward, target = score_steer_to_point_ahead(params)
-
-    if is_sim:
-        return float(reward), target
-    else:
-        return float(reward)
+def reward_function(params):
+    return float(score_steer_to_point_ahead(params))
 
 
 def get_test_params():
