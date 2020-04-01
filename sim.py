@@ -14,7 +14,7 @@ from pygame.math import Vector2
 
 from tracks import baadal as track
 
-from functions import example3 as deepracer
+from functions import TwoDigits as deepracer
 
 
 TITLE = "DeepRacer Simulator"
