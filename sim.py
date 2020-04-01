@@ -700,7 +700,7 @@ def get_waypoints(key):
 def get_adjust_length(val):
     adjust, rate, width, height = get_adjust()
 
-    return val * rate
+    return int(val * rate)
 
 
 def get_adjust_point(point):
@@ -711,7 +711,7 @@ def get_adjust_point(point):
 
     x = (point[0] + adjust[0]) * rate
     y = height - ((point[1] + adjust[1]) * rate)
-    return [x, y]
+    return [int(x), int(y)]
 
 
 def get_adjust_points(points):
