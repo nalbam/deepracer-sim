@@ -1,6 +1,10 @@
 # The 2019 DeepRacer Championship Cup
 
 
+def get_bots_position():
+    return []
+
+
 def get_center_waypoints():
     return [
         [0.30788, 2.83061],

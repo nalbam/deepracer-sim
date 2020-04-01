@@ -1,6 +1,10 @@
 # re:Invent 2018
 
 
+def get_bots_position():
+    return []
+
+
 def get_center_waypoints():
     return [
         [2.91000, 0.68319],

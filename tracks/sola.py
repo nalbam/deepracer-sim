@@ -1,6 +1,10 @@
 # SOLA Speedway
 
 
+def get_bots_position():
+    return []
+
+
 def get_center_waypoints():
     return [
         [-0.00282, -4.46050],

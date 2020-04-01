@@ -1,6 +1,10 @@
 # Baadal Track
 
 
+def get_bots_position():
+    return []
+
+
 def get_center_waypoints():
     return [
         [-5.66000, 3.95888],
