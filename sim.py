@@ -12,9 +12,9 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import sola as track
+from tracks import baadal as track
 
-from functions import fw as deepracer
+from functions import example3 as deepracer
 
 
 TITLE = "DeepRacer Simulator"
