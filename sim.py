@@ -14,7 +14,7 @@ from pygame.math import Vector2
 
 from tracks import sola as track
 
-from functions import td as deepracer
+from functions import fw as deepracer
 
 
 TITLE = "DeepRacer Simulator"
@@ -173,7 +173,9 @@ def draw_polygon(surface, color, lines):
 
 def draw_circle(surface, color, center, radius, width):
     try:
-        pygame.draw.circle(surface, color, get_adjust_point(center), radius, width)
+        pygame.draw.circle(
+            surface, color, get_adjust_point(center), get_adjust_length(radius), width
+        )
     except Exception as ex:
         print("Error:", ex, center, radius, width)
 
@@ -607,7 +609,10 @@ def run():
             if warned:
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
-            # target = rotate(pos, (track_width, track_width), math.radians(target_angle))
+            target = [
+                track_width * math.cos(math.radians(target_angle + heading)) + pos[0],
+                track_width * math.sin(math.radians(target_angle + heading)) + pos[1],
+            ]
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 3)
 
@@ -690,6 +695,12 @@ def get_waypoints(key):
         )
     # return get_adjust_points(waypoints)
     return waypoints
+
+
+def get_adjust_length(val):
+    adjust, rate, width, height = get_adjust()
+
+    return val * rate
 
 
 def get_adjust_point(point):
