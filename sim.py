@@ -33,7 +33,7 @@ STEERING_ANGLE = [-30, -20, -10, 0, 10, 20, 30]
 SPEED = 1.0
 
 BOTS_COUNT = 6
-BOTS_SPEED = 0.5
+BOTS_SPEED = 0
 
 FONT_FACE = "assets/FreeSansBold.ttf"
 FONT_SIZE = 24
