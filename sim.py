@@ -14,7 +14,7 @@ from pygame.math import Vector2
 
 from tracks import sola as track
 
-from functions import fw as deepracer
+from functions import td as deepracer
 
 
 TITLE = "DeepRacer Simulator"
@@ -312,11 +312,11 @@ class Car:
                 self.angle += angle
                 self.vel.rotate_ip(-angle)
         elif keys[pygame.K_LEFT]:
-            self.angle += 10
+            self.angle -= 10
             self.vel.rotate_ip(10)
             self.key_pressed = True
         elif keys[pygame.K_RIGHT]:
-            self.angle -= 10
+            self.angle += 10
             self.vel.rotate_ip(-10)
             self.key_pressed = True
         elif self.args.autonomous:
@@ -523,10 +523,6 @@ def run():
             "closest_waypoints": closest_waypoints,
             "crashed": crashed,
             "distance_from_center": min_dist,
-            "g_scr_adjust": g_scr_adjust,
-            "g_scr_height": g_scr_height,
-            "g_scr_rate": g_scr_rate,
-            "g_scr_width": g_scr_width,
             "heading": heading,
             "is_left_of_center": is_left_of_center,
             "is_reversed": False,
