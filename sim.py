@@ -353,7 +353,7 @@ class Car:
         # draw car
         surface.blit(self.image, self.rect)
 
-        return self.pos
+        return self.pos, (self.angle * -1)
 
 
 def run():
@@ -581,7 +581,7 @@ def run():
         print("pick", pick, round(max_reward, 5), target_angle, warned)
 
         # moving
-        pos = car.move(surface, target_angle, offtrack, crashed, warned)
+        pos, heading = car.move(surface, target_angle, offtrack, crashed, warned)
 
         # time
         race_time = time.time() - start_time
@@ -610,8 +610,8 @@ def run():
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
             target = [
-                track_width * math.cos(math.radians(target_angle + heading)) + pos[0],
-                track_width * math.sin(math.radians(target_angle + heading)) + pos[1],
+                track_width * math.cos(math.radians(heading)) + pos[0],
+                track_width * math.sin(math.radians(heading)) + pos[1],
             ]
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 3)
