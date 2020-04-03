@@ -32,7 +32,7 @@ MIN_REWARD = 0.0001
 STEERING_ANGLE = [-30, -20, -10, 0, 10, 20, 30]
 SPEED = 1.0
 
-BOTS_COUNT = 6
+BOTS_COUNT = 0
 BOTS_SPEED = 0
 
 FONT_FACE = "assets/FreeSansBold.ttf"
@@ -87,17 +87,25 @@ def get_distance(coor1, coor2):
     )
 
 
-def rotate(origin, point, angle):
-    """
-    Rotate a point counterclockwise by a given angle around a given origin.
-    The angle should be given in radians.
-    """
-    ox, oy = origin
-    px, py = point
+def up_sample(waypoints, factor):
+    p = waypoints
+    n = len(p)
 
-    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
-    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
-    return qx, qy
+    return [
+        [
+            i / factor * p[(j + 1) % n][0] + (1 - i / factor) * p[j][0],
+            i / factor * p[(j + 1) % n][1] + (1 - i / factor) * p[j][1],
+        ]
+        for j in range(n)
+        for i in range(factor)
+    ]
+
+
+def get_target(pos, heading, length):
+    return [
+        length * math.cos(math.radians(heading)) + pos[0],
+        length * math.sin(math.radians(heading)) + pos[1],
+    ]
 
 
 def get_angle(coor1, coor2):
@@ -124,8 +132,8 @@ def get_distance_list(pos, waypoints):
     min_dist = float("inf")
     min_idx = -1
 
-    for i, waypoint in enumerate(waypoints):
-        dist = get_distance(pos, waypoint)
+    for i, p in enumerate(waypoints):
+        dist = get_distance(pos, p)
         if dist < min_dist:
             min_dist = dist
             min_idx = i
@@ -134,9 +142,18 @@ def get_distance_list(pos, waypoints):
     return dist_list, min_dist, min_idx, len(waypoints)
 
 
-def get_closeset(waypoints, pos):
-    dist_list, min_dist, min_idx, length = get_distance_list(pos, waypoints)
-    return min_idx, (min_idx / length) * 100
+def get_angle_list(pos, waypoints):
+    angle_list = []
+    dist_list = []
+
+    for i, p in enumerate(waypoints):
+        angle = get_angle_degrees(pos, p)
+        angle_list.append(angle)
+
+        dist = get_distance(pos, p)
+        dist_list.append(dist)
+
+    return angle_list, dist_list, len(waypoints)
 
 
 def draw_line(surface, color, start_pos, end_pos, width):
@@ -356,6 +373,39 @@ class Car:
         return self.pos, (self.angle * -1)
 
 
+def detect_wall(surface, pos, heading, waypoints, is_left=True):
+    dist_list, min_dist, min_idx, length = get_distance_list(pos, waypoints)
+
+    prev_index = min_idx
+    prev_angle = 0
+    diff_first = 0
+
+    detected = False
+    inout = 0
+
+    diff_list = []
+
+    h = math.radians(heading)
+
+    for i in range(1, 20):
+        index = (min_idx + i) % length
+        angle = get_angle(pos, waypoints[index])
+        diff = get_diff_angle(h, angle)
+
+        diff_list.append(diff)
+
+    if is_left:
+        index = diff_list.index(max(diff_list))
+    else:
+        index = diff_list.index(min(diff_list))
+
+    diff = diff_list[index]
+
+    index = (min_idx + index) % length
+
+    return index, math.degrees(diff)
+
+
 def run():
     global g_scr_adjust
     global g_scr_rate
@@ -457,23 +507,46 @@ def run():
         pos = car.get_pos()
         heading = car.get_angle()
 
-        dist_list, min_dist, min_idx, length = get_distance_list(pos, center_lines)
-        closest2 = (min_idx + 1) % length
+        # wall
+        in_i, in_d = detect_wall(surface, pos, heading, inside_lines, True)
+        out_i, out_d = detect_wall(surface, pos, heading, outside_lines, False)
 
-        closest_waypoints = [min_idx, closest2]
+        if args.draw_lines:
+            draw_line(surface, COLOR_RAY_TRACK, pos, inside_lines[in_i], 1)
+            draw_line(surface, COLOR_RAY_TRACK, pos, outside_lines[out_i], 1)
+
+            # d = (in_d + out_d) * 0.5
+            # target = get_target(pos, heading - d, track_width * 3)
+            # if target:
+            #     draw_line(surface, COLOR_RAY_TRACK, pos, target, 3)
+
+        # closest
+        dist_list, min_dist, min_idx, length = get_distance_list(pos, center_lines)
+
+        closest_waypoints = [min_idx, (min_idx + 1) % length]
+
+        # progress
+        progress = (min_idx / length) * 100
+        if steps > 0 and prev_prograss > progress:
+            steps = 0
+            start_time = time.time()
+        steps += 1
+        prev_prograss = progress
+
+        # offtrack
+        if min_dist > (track_width * 0.6):
+            offtrack = True
+        else:
+            offtrack = False
 
         dist_inside = get_distance(pos, inside_lines[min_idx])
         dist_outside = get_distance(pos, outside_lines[min_idx])
 
+        # is_left
         if dist_inside < dist_outside:
             is_left_of_center = True
         else:
             is_left_of_center = False
-
-        if min_dist > (track_width * 0.5):
-            offtrack = True
-        else:
-            offtrack = False
 
         # objects
         closest_objects = []
@@ -484,8 +557,8 @@ def run():
         crashed = False
         warned = False
 
+        # draw_bots
         if len(bots) > 0:
-            # draw_bots
             for i, bot in enumerate(bots):
                 bot.move(surface)
 
@@ -508,15 +581,6 @@ def run():
             del tails[0]
         if len(tails) > 1:
             draw_lines(surface, COLOR_SHORTCUT, False, tails, 2, False)
-
-        # progress
-        index, progress = get_closeset(center_lines, pos)
-
-        if steps > 0 and prev_prograss > progress:
-            steps = 0
-            start_time = time.time()
-        steps += 1
-        prev_prograss = progress
 
         # dummy
         params = {
@@ -609,10 +673,7 @@ def run():
             if warned:
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
-            target = [
-                track_width * math.cos(math.radians(heading)) + pos[0],
-                track_width * math.sin(math.radians(heading)) + pos[1],
-            ]
+            target = get_target(pos, heading, track_width)
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 3)
 
