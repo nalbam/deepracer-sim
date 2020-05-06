@@ -93,8 +93,8 @@ def up_sample(waypoints, factor):
 
     return [
         [
-            i / factor * p[(j + 1) % n][0] + (1 - i / factor) * p[j][0],
-            i / factor * p[(j + 1) % n][1] + (1 - i / factor) * p[j][1],
+            i / factor * p[int((j + 1) % n)][0] + (1 - i / factor) * p[j][0],
+            i / factor * p[int((j + 1) % n)][1] + (1 - i / factor) * p[j][1],
         ]
         for j in range(n)
         for i in range(factor)
