@@ -56,7 +56,7 @@ def get_waypoints_ordered_in_driving_direction(params):
         return params["waypoints"]
 
 
-def up_sample(waypoints, factor):
+def up_sample(waypoints, factor=10):
     """
     Adds extra waypoints in between provided waypoints
     :param waypoints:

@@ -87,7 +87,7 @@ def get_distance(coor1, coor2):
     )
 
 
-def up_sample(waypoints, factor):
+def up_sample(waypoints, factor=10):
     p = waypoints
     n = len(p)
 
