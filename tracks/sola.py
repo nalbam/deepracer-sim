@@ -1,4 +1,4 @@
-# SOLA Speedway
+# 2020-03 SOLA Speedway
 
 
 def get_bots_position():
