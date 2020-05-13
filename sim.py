@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import copy
 import datetime
 import json
 import math
@@ -30,6 +29,7 @@ TAIL_LENGTH = 300
 MIN_REWARD = 0.0001
 
 STEERING_ANGLE = [-30, -20, -10, 0, 10, 20, 30]
+# STEERING_ANGLE = [-30, -15, 0, 15, 30]
 SPEED = 1.0
 
 BOTS_COUNT = 0
@@ -460,6 +460,8 @@ def run():
 
     waypoints = get_waypoints("center")
 
+    shortcut = get_waypoints("shortcut")
+
     track_width = get_distance(inside[0], outside[0])
 
     # laptime
@@ -509,6 +511,9 @@ def run():
         draw_lines(surface, COLOR_TRACK, False, outside, 5, False)
 
         draw_lines(surface, COLOR_CENTER, False, waypoints, 5, True)
+
+        if len(shortcut) > 0:
+            draw_lines(surface, COLOR_SHORTCUT, False, shortcut, 2, True)
 
         # car
         pos = car.get_pos()
@@ -741,21 +746,23 @@ def get_waypoints(key):
         return track.get_inside_waypoints()
     elif key == "outside":
         return track.get_outside_waypoints()
+    elif key == "shortcut":
+        return track.get_shortcut_waypoints()
     elif key == "left":
         return get_merge_waypoints(
-            track.get_inside_waypoints(), track.get_center_waypoints()
+            track.get_center_waypoints(), track.get_inside_waypoints(),
         )
     elif key == "left2":
         return get_border_waypoints(
-            track.get_center_waypoints(), track.get_inside_waypoints()
+            track.get_center_waypoints(), track.get_inside_waypoints(), 0.9
         )
     elif key == "right":
         return get_merge_waypoints(
-            track.get_center_waypoints(), track.get_outside_waypoints()
+            track.get_center_waypoints(), track.get_outside_waypoints(),
         )
     elif key == "right2":
         return get_border_waypoints(
-            track.get_center_waypoints(), track.get_outside_waypoints(),
+            track.get_center_waypoints(), track.get_outside_waypoints(), 0.9
         )
     return None
 
