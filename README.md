@@ -5,6 +5,8 @@ DeepRacer Simulator
 ## init
 
 ```bash
+# brew install sdl2
+
 # on Mac or Ubuntu
 pip3 install pygame==2.0.0.dev4
 
