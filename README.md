@@ -6,6 +6,10 @@ DeepRacer Simulator
 
 ```bash
 # on Mac or Ubuntu
+brew install pyenv
+pyenv install 3.7.6
+pyenv shell 3.7.6
+pip3 install numpy
 pip3 install pygame==2.0.0.dev10
 
 # on Windows
