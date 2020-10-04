@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import datetime
-import json
 import math
 import pygame
 import random
@@ -11,7 +9,7 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import belille as track
+from tracks import aragon as track
 
 from functions import TwoDigits as deepracer
 
@@ -22,9 +20,9 @@ DEBUG_LOG = False
 
 FRAME_RATE = 15
 
-SCREEN_RATE = 50
+SCREEN_RATE = 100
 
-TAIL_LENGTH = 300
+TAIL_LENGTH = 100
 
 MIN_REWARD = 0.0001
 
@@ -171,7 +169,11 @@ def draw_lines(surface, color, closed, lines, width, dashed):
         for i in range(0, lgngth - 1):
             if i % 2 == 0:
                 draw_line(
-                    surface, color, lines[i - 1], lines[i], width,
+                    surface,
+                    color,
+                    lines[i - 1],
+                    lines[i],
+                    width,
                 )
     else:
         pygame.draw.lines(surface, color, closed, get_adjust_points(lines), width)
@@ -750,7 +752,8 @@ def get_waypoints(key):
         return track.get_shortcut_waypoints()
     elif key == "left":
         return get_merge_waypoints(
-            track.get_center_waypoints(), track.get_inside_waypoints(),
+            track.get_center_waypoints(),
+            track.get_inside_waypoints(),
         )
     elif key == "left2":
         return get_border_waypoints(
@@ -758,7 +761,8 @@ def get_waypoints(key):
         )
     elif key == "right":
         return get_merge_waypoints(
-            track.get_center_waypoints(), track.get_outside_waypoints(),
+            track.get_center_waypoints(),
+            track.get_outside_waypoints(),
         )
     elif key == "right2":
         return get_border_waypoints(
