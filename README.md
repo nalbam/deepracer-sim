@@ -12,7 +12,7 @@ pyenv install 3.8.6
 pyenv shell 3.8.6
 
 pip3 install numpy
-pip3 install pygame==2.0.0.dev10
+pip3 install pygame
 
 # on Windows
 py -m pip install -U pygame --user
