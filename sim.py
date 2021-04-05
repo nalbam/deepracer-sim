@@ -9,7 +9,7 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import penbay_pro as track
+from tracks import thunder_hill_pro as track
 
 from functions import TwoDigits as deepracer
 
