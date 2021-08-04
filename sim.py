@@ -9,7 +9,7 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import thunder_hill_pro as track
+from tracks import arctic_pro as track
 
 from functions import TwoDigits as deepracer
 
@@ -20,7 +20,7 @@ DEBUG_LOG = False
 
 FRAME_RATE = 15
 
-SCREEN_RATE = 50
+SCREEN_RATE = 100
 
 TAIL_LENGTH = 100
 
