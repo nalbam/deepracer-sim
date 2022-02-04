@@ -9,7 +9,7 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import arctic_pro as track
+from tracks import champ as track
 
 from functions import TwoDigits as deepracer
 
