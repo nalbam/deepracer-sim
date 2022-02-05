@@ -1,0 +1,27 @@
+name: track
+
+on:
+  schedule:
+    - cron: "0 0,12 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 0
+
+      - name: Report
+        run: |
+          bash ./track.sh
+
+      - name: Commit & Push
+        uses: opspresso/action-builder@master
+        with:
+          args: --commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESSAGE_PATH: ./build/commit_message.txt
