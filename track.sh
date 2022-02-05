@@ -61,7 +61,7 @@ _build() {
   ROUTE_PATH=${SHELL_DIR}/build/opt/install/deepracer_simulation_environment/share/deepracer_simulation_environment/routes/
 
   if [ -d ${ROUTE_PATH} ]; then
-    rsync -avu --delete ${ROUTE_PATH} ${SHELL_DIR}/tracks/
+    rsync -avu --delete ${ROUTE_PATH} ${SHELL_DIR}/routes/
   fi
 
   # commit message
