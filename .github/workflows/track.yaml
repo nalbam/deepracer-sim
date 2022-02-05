@@ -3,6 +3,10 @@ name: track
 on:
   schedule:
     - cron: "0 0,12 * * *"
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
   build:
