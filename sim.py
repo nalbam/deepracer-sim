@@ -27,7 +27,6 @@ TAIL_LENGTH = 100
 MIN_REWARD = 0.0001
 
 STEERING_ANGLE = [-30, -20, -10, 0, 10, 20, 30]
-# STEERING_ANGLE = [-30, -15, 0, 15, 30]
 SPEED = 1.0
 
 BOTS_COUNT = 0
@@ -65,20 +64,18 @@ g_scr_height = 0
 
 def parse_args():
     p = argparse.ArgumentParser(description=TITLE)
-    p.add_argument("-a", "--autonomous", action="store_true", help="autonomous")
-    p.add_argument("-d", "--draw-lines", action="store_true", help="draw lines")
-    p.add_argument("-f", "--full-screen", action="store_true", help="full screen")
+    p.add_argument("-a", "--autonomous", default=False, action="store_true", help="autonomous")
+    p.add_argument("-d", "--draw-lines", default=True, action="store_true", help="draw lines")
+    p.add_argument("-f", "--full-screen", default=False, action="store_true", help="full screen")
     p.add_argument("-s", "--speed", type=float, default=SPEED, help="speed")
     p.add_argument("--bots-count", type=int, default=BOTS_COUNT, help="bots count")
     p.add_argument("--bots-speed", type=float, default=BOTS_SPEED, help="bots speed")
+    p.add_argument("--debug", default=DEBUG_LOG, action="store_true", help="debug")
     return p.parse_args()
 
 
 def get_distance(coor1, coor2):
-    return math.sqrt(
-        (coor1[0] - coor2[0]) * (coor1[0] - coor2[0])
-        + (coor1[1] - coor2[1]) * (coor1[1] - coor2[1])
-    )
+    return math.sqrt((coor1[0] - coor2[0]) * (coor1[0] - coor2[0]) + (coor1[1] - coor2[1]) * (coor1[1] - coor2[1]))
 
 
 def up_sample(waypoints, factor=10):
@@ -152,31 +149,21 @@ def get_angle_list(pos, waypoints):
 
 def draw_line(surface, color, start_pos, end_pos, width):
     try:
-        pygame.draw.line(
-            surface,
-            color,
-            get_adjust_point(start_pos),
-            get_adjust_point(end_pos),
-            width,
-        )
+        pygame.draw.line(surface, color, get_adjust_point(start_pos), get_adjust_point(end_pos), width)
     except Exception as ex:
         print("Error:", ex, start_pos, end_pos, width)
 
 
 def draw_lines(surface, color, closed, lines, width, dashed):
-    if dashed:
-        lgngth = len(lines)
-        for i in range(0, lgngth - 1):
-            if i % 2 == 0:
-                draw_line(
-                    surface,
-                    color,
-                    lines[i - 1],
-                    lines[i],
-                    width,
-                )
-    else:
-        pygame.draw.lines(surface, color, closed, get_adjust_points(lines), width)
+    try:
+        if dashed:
+            for i in range(0, len(lines) - 1):
+                if i % 2 == 0:
+                    draw_line(surface, color, lines[i - 1], lines[i], width)
+        else:
+            pygame.draw.lines(surface, color, closed, get_adjust_points(lines), width)
+    except Exception as ex:
+        print("Error:", ex, color)
 
 
 def draw_polygon(surface, color, lines):
@@ -188,9 +175,7 @@ def draw_polygon(surface, color, lines):
 
 def draw_circle(surface, color, center, radius, width):
     try:
-        pygame.draw.circle(
-            surface, color, get_adjust_point(center), get_adjust_length(radius), width
-        )
+        pygame.draw.circle(surface, color, get_adjust_point(center), get_adjust_length(radius), width)
     except Exception as ex:
         print("Error:", ex, center, radius, width)
 
@@ -295,9 +280,7 @@ class Car:
     def get_radians(self):
         return self.angle * -1
 
-    def move(
-        self, surface, angle, pause=False, offtrack=False, crashed=False, warned=False
-    ):
+    def move(self, surface, angle, pause=False, offtrack=False, crashed=False, warned=False):
         # global g_scr_width
         # global g_scr_height
 
@@ -366,48 +349,12 @@ class Car:
         self.image = pygame.transform.rotate(image, -self.angle)
 
         self.rect = self.image.get_rect(center=self.rect.center)
-        mask_car = pygame.mask.from_surface(self.image)
+        pygame.mask.from_surface(self.image)
 
         # draw car
         surface.blit(self.image, self.rect)
 
         return self.pos, (self.angle * -1)
-
-
-def detect_wall(pos, heading, track_width, waypoints, is_left=True, rate=1.8):
-    up_sampled = up_sample(waypoints, 10)
-
-    dist_list, min_dist, min_idx, length = get_distance_list(pos, up_sampled)
-
-    diff_list = []
-
-    index = 0
-    diff = 0
-
-    h = math.radians(heading)
-
-    for i in range(1, int(length * 0.1)):
-        index = (min_idx + i) % length
-
-        if dist_list[index] > track_width * rate:
-            break
-
-        angle = get_radians(pos, up_sampled[index])
-        diff = get_diff_radians(h, angle)
-
-        diff_list.append(diff)
-
-    if len(diff_list) > 0:
-        if is_left:
-            index = diff_list.index(min(diff_list))
-        else:
-            index = diff_list.index(max(diff_list))
-
-        diff = diff_list[index]
-
-    index = (min_idx + index) % length
-
-    return up_sampled[index], round(math.degrees(diff), 3)
 
 
 def run():
@@ -521,16 +468,8 @@ def run():
         pos = car.get_pos()
         heading = car.get_radians()
 
-        # wall
-        in_wall, in_diff = detect_wall(pos, heading, track_width, inside, True)
-        out_wall, out_diff = detect_wall(pos, heading, track_width, outside, False)
-
-        if args.draw_lines:
-            draw_line(surface, COLOR_RAY_TRACK, pos, in_wall, 2)
-            draw_line(surface, COLOR_RAY_TRACK, pos, out_wall, 2)
-
         # closest
-        dist_list, min_dist, min_idx, length = get_distance_list(pos, waypoints)
+        _, min_dist, min_idx, length = get_distance_list(pos, waypoints)
 
         closest_waypoints = [min_idx, (min_idx + 1) % length]
 
@@ -541,6 +480,10 @@ def run():
             start_time = time.time()
         steps += 1
         prev_prograss = progress
+
+        if args.debug:
+            print("")
+            print("run", steps, progress)
 
         # offtrack
         if min_dist > (track_width * 0.6):
@@ -613,6 +556,7 @@ def run():
             "waypoints": waypoints,
             "x": pos[0],
             "y": pos[1],
+            "surface": surface,
         }
 
         # pick target
@@ -632,7 +576,7 @@ def run():
                 reward = deepracer.reward_function(params)
                 rewards.append("{:03.5f}".format(reward))
 
-                if DEBUG_LOG:
+                if args.debug:
                     print("reward", i, round(reward, 5))
 
                 if reward > max_reward:
@@ -654,12 +598,8 @@ def run():
             pick = indexes[i]
             angle = STEERING_ANGLE[pick]
 
-        if pause == False:
-            print(
-                "pick {} {:03.5f} {:03.3f} {:03.3f} {}".format(
-                    pick, max_reward, in_diff, out_diff, rewards
-                )
-            )
+        # if pause == False:
+        #     print("pick {} {:03.5f} {:03.3f} {:03.3f} {}".format(pick, max_reward, in_diff, out_diff, rewards))
 
         # moving
         pos, heading = car.move(surface, angle, pause, offtrack, crashed, warned)
@@ -756,18 +696,14 @@ def get_waypoints(key):
             track.get_inside_waypoints(),
         )
     elif key == "left2":
-        return get_border_waypoints(
-            track.get_center_waypoints(), track.get_inside_waypoints(), 0.9
-        )
+        return get_border_waypoints(track.get_center_waypoints(), track.get_inside_waypoints(), 0.9)
     elif key == "right":
         return get_merge_waypoints(
             track.get_center_waypoints(),
             track.get_outside_waypoints(),
         )
     elif key == "right2":
-        return get_border_waypoints(
-            track.get_center_waypoints(), track.get_outside_waypoints(), 0.9
-        )
+        return get_border_waypoints(track.get_center_waypoints(), track.get_outside_waypoints(), 0.9)
     return None
 
 

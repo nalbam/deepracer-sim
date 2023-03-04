@@ -36,3 +36,6 @@ target/
 # JetBrains
 .idea/
 *.iml
+
+# functions
+functions/custom.py
