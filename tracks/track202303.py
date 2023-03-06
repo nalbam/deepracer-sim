@@ -1,4 +1,4 @@
-# The 2019 DeepRacer Championship Cup
+# 2023 03
 
 
 def get_center_waypoints():

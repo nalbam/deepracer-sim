@@ -3,6 +3,7 @@
 
 import argparse
 import math
+import numpy as np
 import pygame
 import random
 import time
@@ -11,16 +12,16 @@ from pygame.math import Vector2
 
 from tracks import track202303 as track
 
-from functions import TwoDigits as deepracer
+from functions import custom as deepracer
 
 
 TITLE = "DeepRacer Simulator"
 
 DEBUG_LOG = False
 
-FRAME_RATE = 15
+FRAME_RATE = 15  # fps
 
-SCREEN_RATE = 100
+SCREEN_RATE = 100  # % of screen size
 
 TAIL_LENGTH = 100
 
@@ -178,6 +179,68 @@ def draw_circle(surface, color, center, radius, width):
         pygame.draw.circle(surface, color, get_adjust_point(center), get_adjust_length(radius), width)
     except Exception as ex:
         print("Error:", ex, center, radius, width)
+
+
+def intersection(x1, y1, x2, y2, x3, y3, x4, y4):
+    # Calculate the intersection point between two line segments
+    # Based on the algorithm from https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+
+    det = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+    if det == 0:
+        return None
+
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / det
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / det
+
+    if 0 <= t <= 1 and 0 <= u <= 1:
+        x = x1 + t * (x2 - x1)
+        y = y1 + t * (y2 - y1)
+        return (x, y)
+
+    return None
+
+
+def get_collision(pos, angles, walls, dist):
+    collisions = []
+    for angle in angles:
+        target = get_target(pos, angle, dist)
+
+        intersections = []
+        for i in range(0, len(walls) - 1):
+            intersection_point = intersection(pos[0], pos[1], target[0], target[1], walls[i][0], walls[i][1], walls[i + 1][0], walls[i + 1][1])
+            if intersection_point is not None:
+                intersections.append(intersection_point)
+
+        if len(intersections) > 0:
+            collisions.append(min(intersections, key=lambda x: get_distance(pos, x)))
+
+    return max(collisions, key=lambda x: get_distance(pos, x)) if len(collisions) > 0 else None
+
+
+def find_destination(pos, heading, inside, outside, closest_idx, length, track_width):
+    angles = [heading + angle for angle in range(-50, 50)]
+
+    cut = length // 3
+    dist = track_width * 20
+
+    inside_cut = inside[closest_idx : closest_idx + cut]
+    if len(inside_cut) < cut:
+        inside_cut += inside[: cut - len(inside_cut)]
+    outside_cut = outside[closest_idx : closest_idx + cut]
+    if len(outside_cut) < cut:
+        outside_cut += outside[: cut - len(outside_cut)]
+
+    walls = inside_cut + outside_cut[::-1]
+
+    collision = get_collision(pos, angles, walls, dist)
+
+    if collision is not None:
+        angle = get_degrees(pos, collision)
+        angles = np.arange(angle - 1, angle + 1, 0.1)
+        return get_collision(pos, angles, walls, dist)
+
+    return None
 
 
 def init_bot(args):
@@ -347,6 +410,10 @@ class Car:
             image = self.images["origin"]
 
         self.image = pygame.transform.rotate(image, -self.angle)
+
+        scale_width = int(self.image.get_width() * (g_scr_rate / 100))
+        scale_height = int(self.image.get_height() * (g_scr_rate / 100))
+        self.image = pygame.transform.scale(self.image, (scale_width, scale_height))
 
         self.rect = self.image.get_rect(center=self.rect.center)
         pygame.mask.from_surface(self.image)
@@ -577,7 +644,7 @@ def run():
                 rewards.append("{:03.5f}".format(reward))
 
                 if args.debug:
-                    print("reward", i, round(reward, 5))
+                    print("reward", i, round(reward, 5), steering_angle)
 
                 if reward > max_reward:
                     indexes.clear()
@@ -598,8 +665,8 @@ def run():
             pick = indexes[i]
             angle = STEERING_ANGLE[pick]
 
-        # if pause == False:
-        #     print("pick {} {:03.5f} {:03.3f} {:03.3f} {}".format(pick, max_reward, in_diff, out_diff, rewards))
+        if pause == False:
+            print("pick {} {:03.5f} {}".format(pick, max_reward, rewards))
 
         # moving
         pos, heading = car.move(surface, angle, pause, offtrack, crashed, warned)
@@ -630,9 +697,13 @@ def run():
             if warned:
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
-            target = get_target(pos, heading, track_width * 2)
+            target = get_target(pos, heading, track_width)
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 3)
+
+            destination = find_destination(pos, heading, inside, outside, closest_idx, waypoints_length, track_width * 20)
+            if destination:
+                draw_line(surface, COLOR_RAY, pos, destination, 1)
 
         # pygame.display.flip()
         pygame.display.update()
