@@ -216,8 +216,8 @@ class Bot:
     def get_pos(self):
         return self.car.get_pos()
 
-    def get_radians(self):
-        return self.car.get_radians()
+    def get_angle(self):
+        return self.car.get_angle()
 
     def left_of_center(self):
         if self.is_left:
@@ -228,11 +228,11 @@ class Bot:
     def move(self, surface, pause=False):
         pos = self.car.get_pos()
 
-        dist_list, min_dist, min_idx, length = get_distance_list(pos, self.waypoints)
+        _, _, min_idx, _ = get_distance_list(pos, self.waypoints)
 
         index = (min_idx + 3) % len(self.waypoints)
 
-        angle = math.radians(self.car.get_radians())
+        angle = math.radians(self.car.get_angle())
         target_angle = get_radians(pos, self.waypoints[index])
         diff_angle = get_diff_degrees(angle, target_angle)
 
@@ -277,7 +277,7 @@ class Car:
     def get_pos(self):
         return self.pos
 
-    def get_radians(self):
+    def get_angle(self):
         return self.angle * -1
 
     def move(self, surface, angle, pause=False, offtrack=False, crashed=False, warned=False):
@@ -394,7 +394,7 @@ def run():
         g_scr_width = width
         g_scr_height = height
     else:
-        adjust, rate, width, height = get_adjust()
+        _, _, width, height = get_adjust()
 
         print("screen", width, height)
 
@@ -466,15 +466,15 @@ def run():
 
         # car
         pos = car.get_pos()
-        heading = car.get_radians()
+        heading = car.get_angle()
 
         # closest
-        _, min_dist, min_idx, length = get_distance_list(pos, waypoints)
+        _, closest_dist, closest_idx, waypoints_length = get_distance_list(pos, waypoints)
 
-        closest_waypoints = [min_idx, (min_idx + 1) % length]
+        closest_waypoints = [closest_idx, (closest_idx + 1) % waypoints_length]
 
         # progress
-        progress = (min_idx / length) * 100
+        progress = (closest_idx / waypoints_length) * 100
         if steps > 0 and prev_prograss > progress:
             steps = 0
             start_time = time.time()
@@ -486,13 +486,13 @@ def run():
             print("run", steps, progress)
 
         # offtrack
-        if min_dist > (track_width * 0.6):
+        if closest_dist > (track_width * 0.6):
             offtrack = True
         else:
             offtrack = False
 
-        dist_inside = get_distance(pos, inside[min_idx])
-        dist_outside = get_distance(pos, outside[min_idx])
+        dist_inside = get_distance(pos, inside[closest_idx])
+        dist_outside = get_distance(pos, outside[closest_idx])
 
         # is_left
         if dist_inside < dist_outside:
@@ -540,7 +540,7 @@ def run():
             "closest_objects": closest_objects,
             "closest_waypoints": closest_waypoints,
             "crashed": crashed,
-            "distance_from_center": min_dist,
+            "distance_from_center": closest_dist,
             "heading": heading,
             "is_left_of_center": is_left_of_center,
             "is_reversed": False,
@@ -630,7 +630,7 @@ def run():
             if warned:
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
-            target = get_target(pos, heading, track_width)
+            target = get_target(pos, heading, track_width * 2)
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 3)
 
@@ -708,13 +708,13 @@ def get_waypoints(key):
 
 
 def get_adjust_length(val):
-    adjust, rate, width, height = get_adjust()
+    _, rate, _, _ = get_adjust()
 
     return int(val * rate)
 
 
 def get_adjust_point(point):
-    adjust, rate, width, height = get_adjust()
+    adjust, rate, _, height = get_adjust()
 
     if rate == 1:
         return point
