@@ -3,7 +3,6 @@
 
 import argparse
 import math
-import numpy as np
 import pygame
 import random
 import time
@@ -237,7 +236,7 @@ def find_destination(pos, heading, inside, outside, closest_idx, length, track_w
 
     if collision is not None:
         angle = get_degrees(pos, collision)
-        angles = np.arange(angle - 1, angle + 1, 0.1)
+        angles = [angle / 10 for angle in range(int((angle - 2) * 10), int((angle + 2) * 10))]
         return get_collision(pos, angles, walls, dist)
 
     return None
@@ -288,7 +287,7 @@ class Bot:
         else:
             return 0
 
-    def move(self, surface, pause=False):
+    def move(self, surface, paused=False):
         pos = self.car.get_pos()
 
         _, _, min_idx, _ = get_distance_list(pos, self.waypoints)
@@ -307,7 +306,7 @@ class Bot:
         else:
             angle = 0
 
-        self.car.move(surface, angle, pause, False, False)
+        self.car.move(surface, angle, paused, False, False)
 
 
 class Car:
@@ -343,7 +342,7 @@ class Car:
     def get_angle(self):
         return self.angle * -1
 
-    def move(self, surface, angle, pause=False, offtrack=False, crashed=False, warned=False):
+    def move(self, surface, angle, paused=False, offtrack=False, crashed=False, warned=False):
         # global g_scr_width
         # global g_scr_height
 
@@ -353,7 +352,7 @@ class Car:
 
         self.key_pressed = False
 
-        if pause == False:
+        if paused == False:
             # pos
             if self.is_bot:
                 self.pos += self.vel
@@ -371,7 +370,7 @@ class Car:
 
         self.rect.center = get_adjust_point(self.pos)
 
-        if pause == False:
+        if paused == False:
             # angle
             if self.is_bot:
                 if abs(angle) > 0:
@@ -471,14 +470,16 @@ def run():
         surface = pygame.display.set_mode((g_scr_width, g_scr_height))
 
     # track
+    waypoints = get_waypoints("center")
+
     inside = get_waypoints("inside")
     outside = get_waypoints("outside")
-
-    waypoints = get_waypoints("center")
 
     shortcut = get_waypoints("shortcut")
 
     track_width = get_distance(inside[0], outside[0])
+
+    print("track", len(waypoints), track_width)
 
     # laptime
     font = pygame.font.Font(FONT_FACE, FONT_SIZE)
@@ -499,7 +500,7 @@ def run():
     bots = init_bot(args)
 
     run = True
-    pause = False
+    paused = False
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -510,7 +511,7 @@ def run():
         if keys[pygame.K_ESCAPE] or keys[pygame.K_q]:
             run = False
         if keys[pygame.K_SPACE] or keys[pygame.K_p]:
-            pause = pause == False
+            paused = paused == False
 
         if run == False:
             break
@@ -553,8 +554,9 @@ def run():
             print("run", steps, progress)
 
         # offtrack
-        if closest_dist > (track_width * 0.6):
+        if closest_dist > (track_width * 0.55):
             offtrack = True
+            paused = True
         else:
             offtrack = False
 
@@ -579,7 +581,7 @@ def run():
         # draw_bots
         if len(bots) > 0:
             for i, bot in enumerate(bots):
-                bot.move(surface, pause)
+                bot.move(surface, paused)
 
                 obj_pos = bot.get_pos()
 
@@ -636,7 +638,7 @@ def run():
         target = []
         angle = 0
 
-        if pause == False:
+        if paused == False:
             for i, steering_angle in enumerate(STEERING_ANGLE):
                 params["steering_angle"] = steering_angle
 
@@ -665,11 +667,11 @@ def run():
             pick = indexes[i]
             angle = STEERING_ANGLE[pick]
 
-        if pause == False:
-            print("pick {} {:03.5f} {}".format(pick, max_reward, rewards))
+        if paused == False:
+            print("pick idx:{} {:03.5f} {}".format(pick, max_reward, rewards))
 
         # moving
-        pos, heading = car.move(surface, angle, pause, offtrack, crashed, warned)
+        pos, heading = car.move(surface, angle, paused, offtrack, crashed, warned)
 
         # time
         race_time = time.time() - start_time
