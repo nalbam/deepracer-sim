@@ -65,7 +65,8 @@ g_scr_height = 0
 def parse_args():
     p = argparse.ArgumentParser(description=TITLE)
     p.add_argument("-a", "--autonomous", default=False, action="store_true", help="autonomous")
-    p.add_argument("-d", "--draw-lines", default=True, action="store_true", help="draw lines")
+    p.add_argument("-c", "--crashed", default=False, action="store_true", help="crashed")
+    p.add_argument("-d", "--draw-lines", default=False, action="store_true", help="draw lines")
     p.add_argument("-f", "--full-screen", default=False, action="store_true", help="full screen")
     p.add_argument("-s", "--speed", type=float, default=SPEED, help="speed")
     p.add_argument("--bots-count", type=int, default=BOTS_COUNT, help="bots count")
@@ -99,12 +100,20 @@ def get_target(pos, angle, dist):
     ]
 
 
+def degrees(angle):
+    if angle > 180:
+        angle -= 360
+    if angle < -180:
+        angle += 360
+    return angle
+
+
 def get_radians(coor1, coor2):
     return math.atan2((coor2[1] - coor1[1]), (coor2[0] - coor1[0]))
 
 
 def get_degrees(coor1, coor2):
-    return math.degrees(get_radians(coor1, coor2))
+    return degrees(math.degrees(get_radians(coor1, coor2)))
 
 
 def get_diff_radians(angle1, angle2):
@@ -115,7 +124,7 @@ def get_diff_radians(angle1, angle2):
 
 
 def get_diff_degrees(angle1, angle2):
-    return math.degrees(get_diff_radians(angle1, angle2))
+    return degrees(math.degrees(get_diff_radians(angle1, angle2)))
 
 
 def get_distance_list(pos, waypoints):
@@ -201,15 +210,24 @@ def intersection(x1, y1, x2, y2, x3, y3, x4, y4):
 
 
 def get_collision(pos, angles, walls, dist):
+    left_angle = get_degrees(pos, walls[0])
+    right_angle = get_degrees(pos, walls[-1])
+
     collisions = []
     for angle in angles:
         target = get_target(pos, angle, dist)
 
+        diff_left = degrees(angle - left_angle)
+        diff_right = degrees(angle - right_angle)
+        if diff_left >= 0 or diff_right <= 0:
+            print("Angle out of range", diff_left, left_angle, angle, right_angle, diff_right)
+            continue
+
         intersections = []
         for i in range(0, len(walls) - 1):
-            intersection_point = intersection(pos[0], pos[1], target[0], target[1], walls[i][0], walls[i][1], walls[i + 1][0], walls[i + 1][1])
-            if intersection_point is not None:
-                intersections.append(intersection_point)
+            point = intersection(pos[0], pos[1], target[0], target[1], walls[i][0], walls[i][1], walls[i + 1][0], walls[i + 1][1])
+            if point is not None:
+                intersections.append(point)
 
         if len(intersections) > 0:
             collisions.append(min(intersections, key=lambda x: get_distance(pos, x)))
@@ -217,29 +235,29 @@ def get_collision(pos, angles, walls, dist):
     return max(collisions, key=lambda x: get_distance(pos, x)) if len(collisions) > 0 else None
 
 
-def find_destination(pos, heading, inside, outside, closest_idx, length, track_width):
-    angles = [heading + angle for angle in range(-50, 50)]
+def find_destination(pos, heading, inside, outside, closest_idx, track_width):
+    start_idx = (closest_idx + 1) % len(inside)
+    length_cut = len(inside) // 5
+    sight_dist = track_width * 20
 
-    cut = length // 3
-    dist = track_width * 20
-
-    inside_cut = inside[closest_idx : closest_idx + cut]
-    if len(inside_cut) < cut:
-        inside_cut += inside[: cut - len(inside_cut)]
-    outside_cut = outside[closest_idx : closest_idx + cut]
-    if len(outside_cut) < cut:
-        outside_cut += outside[: cut - len(outside_cut)]
+    inside_cut = inside[start_idx : start_idx + length_cut]
+    if len(inside_cut) < length_cut:
+        inside_cut += inside[: length_cut - len(inside_cut)]
+    outside_cut = outside[start_idx : start_idx + length_cut]
+    if len(outside_cut) < length_cut:
+        outside_cut += outside[: length_cut - len(outside_cut)]
 
     walls = inside_cut + outside_cut[::-1]
 
-    collision = get_collision(pos, angles, walls, dist)
+    angles = [degrees(heading + angle) for angle in range(-60, 60)]
+    dest = get_collision(pos, angles, walls, sight_dist)
 
-    if collision is not None:
-        angle = get_degrees(pos, collision)
-        angles = [angle / 10 for angle in range(int((angle - 2) * 10), int((angle + 2) * 10))]
-        return get_collision(pos, angles, walls, dist)
+    if dest is not None:
+        angle = get_degrees(pos, dest)
+        angles = [degrees(angle / 10) for angle in range(int((angle - 2) * 10), int((angle + 2) * 10))]
+        dest = get_collision(pos, angles, walls, sight_dist)
 
-    return None
+    return dest
 
 
 def init_bot(args):
@@ -556,7 +574,8 @@ def run():
         # offtrack
         if closest_dist > (track_width * 0.55):
             offtrack = True
-            paused = True
+            if args.crashed:
+                paused = True
         else:
             offtrack = False
 
@@ -703,7 +722,7 @@ def run():
             if target:
                 draw_line(surface, COLOR_RAY, pos, target, 2)
 
-            destination = find_destination(pos, heading, inside, outside, closest_idx, waypoints_length, track_width * 20)
+            destination = find_destination(pos, heading, inside, outside, closest_idx, track_width)
             if destination:
                 draw_line(surface, COLOR_RAY, pos, destination, 1)
 
