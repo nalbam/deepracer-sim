@@ -699,9 +699,9 @@ def run():
             if warned:
                 draw_line(surface, COLOR_OBJECT, pos, closest_objects, 2)
 
-            target = get_target(pos, heading, track_width)
+            target = get_target(pos, heading, track_width * 2)
             if target:
-                draw_line(surface, COLOR_RAY, pos, target, 3)
+                draw_line(surface, COLOR_RAY, pos, target, 2)
 
             destination = find_destination(pos, heading, inside, outside, closest_idx, waypoints_length, track_width * 20)
             if destination:
