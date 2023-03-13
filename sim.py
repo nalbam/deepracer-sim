@@ -658,36 +658,19 @@ def run():
         angle = 0
 
         if paused == False:
-            for i, steering_angle in enumerate(STEERING_ANGLE):
+            for steering_angle in range(-30, 31):
                 params["steering_angle"] = steering_angle
 
                 reward = deepracer.reward_function(params)
-                rewards.append("{:03.5f}".format(reward))
 
-                if args.debug:
-                    print("reward", i, round(reward, 5), steering_angle)
+                rewards.append({"reward": reward, "angle": steering_angle})
 
-                if reward > max_reward:
-                    indexes.clear()
-                    indexes.append(i)
-                    max_reward = reward
-                elif reward == max_reward:
-                    indexes.append(i)
+        max_reward = max(rewards, key=lambda x: x["reward"])
 
-        n = len(indexes)
-
-        if n == 0:
-            angle = 0
-        elif n == 1:
-            pick = indexes[0]
-            angle = STEERING_ANGLE[pick]
-        else:
-            i = random.randint(0, n - 1)
-            pick = indexes[i]
-            angle = STEERING_ANGLE[pick]
+        angle = max_reward["angle"]
 
         if paused == False:
-            print("pick idx:{} {:03.5f} {}".format(pick, max_reward, rewards))
+            print("pick {} {}".format(max_reward, rewards))
 
         # moving
         pos, heading = car.move(surface, angle, paused, offtrack, crashed, warned)
