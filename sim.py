@@ -9,9 +9,9 @@ import time
 
 from pygame.math import Vector2
 
-from tracks import track202303 as track
+from tracks import champ as track
 
-from functions import custom as deepracer
+from functions import TwoDigits as deepracer
 
 
 TITLE = "DeepRacer Simulator"
